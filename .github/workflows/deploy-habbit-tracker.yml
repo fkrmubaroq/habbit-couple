@@ -19,6 +19,7 @@ concurrency:
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '12.9.1'
+  PM2_BIN: /home/ubuntu/.local/share/pnpm/bin/pm2
 
 jobs:
   build:
@@ -161,4 +162,4 @@ jobs:
             -o PubkeyAuthentication=no \
             -p "${{ secrets.VPS_PORT || '22' }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "cd '/var/www/habbit-couple/habbit-tracker-api' && (pm2 describe 'habbit-tracker-api' > /dev/null 2>&1 && pm2 restart 'habbit-tracker-api' --update-env || pm2 start dist/index.js --name 'habbit-tracker-api') && pm2 save"
+            "cd '/var/www/habbit-couple/habbit-tracker-api' && (PM2='${{ env.PM2_BIN }}'; \"\$PM2\" describe 'habbit-tracker-api' > /dev/null 2>&1 && \"\$PM2\" restart 'habbit-tracker-api' --update-env || \"\$PM2\" start dist/index.js --name 'habbit-tracker-api') && '${{ env.PM2_BIN }}' save"
