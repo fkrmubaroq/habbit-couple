@@ -1,0 +1,135 @@
+name: Deploy Habit Tracker
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref (branch/tag/sha) yang di-deploy'
+        required: false
+        default: 'main'
+      skip_web:
+        description: 'Lewati deploy web (hanya API)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-habbit-tracker
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '12.9.1'
+
+jobs:
+  build:
+    name: Build artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API
+        run: pnpm turbo run build --filter=@repo/habbit-tracker-api
+
+      - name: Build Web
+        if: ${{ !inputs.skip_web }}
+        env:
+          VITE_BASE_URL_API: ${{ secrets.VITE_BASE_URL_API }}
+        run: pnpm turbo run build --filter=@repo/habbit-tracker-web
+
+      - name: Package API bundle
+        run: |
+          mkdir -p .artifacts/api
+          cp -r apps/habbit-tracker-api/dist/. .artifacts/api/
+          cp apps/habbit-tracker-api/package.json .artifacts/api/package.json
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: habbit-api
+          path: .artifacts/api
+          retention-days: 7
+
+      - name: Upload Web artifact
+        if: ${{ !inputs.skip_web }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: habbit-web
+          path: apps/habbit-tracker-web/dist
+          retention-days: 7
+
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      - name: Download API artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: habbit-api
+          path: .artifacts/api
+
+      - name: Download Web artifact
+        if: ${{ !inputs.skip_web }}
+        uses: actions/download-artifact@v4
+        with:
+          name: habbit-web
+          path: .artifacts/web
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "${{ secrets.VPS_PORT || '22' }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sync API dist to VPS
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_deploy -p ${{ secrets.VPS_PORT || '22' }} -o StrictHostKeyChecking=yes" \
+            .artifacts/api/ \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_API_PATH }}/dist/"
+
+      - name: Sync API package.json
+        run: |
+          rsync -az \
+            -e "ssh -i ~/.ssh/id_deploy -p ${{ secrets.VPS_PORT || '22' }} -o StrictHostKeyChecking=yes" \
+            .artifacts/api/package.json \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_API_PATH }}/package.json"
+
+      - name: Sync Web dist to VPS
+        if: ${{ !inputs.skip_web }}
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_deploy -p ${{ secrets.VPS_PORT || '22' }} -o StrictHostKeyChecking=yes" \
+            .artifacts/web/ \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_WEB_PATH }}/"
+
+      - name: Restart API with PM2
+        run: |
+          ssh -i ~/.ssh/id_deploy \
+            -p "${{ secrets.VPS_PORT || '22' }}" \
+            -o StrictHostKeyChecking=yes \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cd '${{ secrets.VPS_API_PATH }}' && pm2 restart '${{ secrets.PM2_APP_NAME }}' --update-env || pm2 start dist/index.js --name '${{ secrets.PM2_APP_NAME }}'"
