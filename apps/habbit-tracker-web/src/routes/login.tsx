@@ -52,8 +52,8 @@ function LoginComponent() {
     try {
       const origin = new URL(returnTo).origin;
       const appNames: Record<string, string> = {
-        [import.meta.env.VITE_GROCERY_APP_URL || "http://localhost:4042"]: "Grocery List",
-        [import.meta.env.VITE_FINANCE_APP_URL || "http://localhost:4040"]: "Keuangan Pasutri",
+        [import.meta.env.VITE_GROCERY_APP_URL || "http://localhost:6061"]: "Grocery List",
+        [import.meta.env.VITE_FINANCE_APP_URL || "http://localhost:5051"]: "Keuangan Pasutri",
       };
       return appNames[origin] ?? null;
     } catch {

@@ -12,7 +12,7 @@ dotenv.config();
 
 const envSchema = z
   .object({
-    PORT: z.coerce.number().default(5053),
+    PORT: z.coerce.number().default(8080),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     DB_PROVIDER: z.enum(["mysql", "supabase", "neondb"]).default("mysql"),
     // Must match apps/habbit-tracker-api/.env so the shared "token" cookie verifies.

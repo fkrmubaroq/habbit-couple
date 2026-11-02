@@ -1,9 +1,9 @@
 export const HABIT_APP_URL = (
-  import.meta.env.VITE_HABIT_APP_URL || "http://localhost:4041"
+  import.meta.env.VITE_HABIT_APP_URL || "http://localhost:7071"
 ).replace(/\/$/, "");
 
 export const POMODORO_APP_URL = (
-  import.meta.env.VITE_POMODORO_APP_URL || "http://localhost:4043"
+  import.meta.env.VITE_POMODORO_APP_URL || "http://localhost:8081"
 ).replace(/\/$/, "");
 
 let isRedirecting = false;

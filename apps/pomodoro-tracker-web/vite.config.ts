@@ -9,9 +9,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
-    // Production is served under the `/pomodoro/` path on the shared domain
-    // (see scripts/nginx.conf), while dev keeps running at the root of 4043.
-    base: mode === "production" ? "/pomodoro/" : "/",
+    // Disajikan di root pada port frontend sendiri (lihat scripts/nginx.conf).
+    base: "/",
     plugins: [
       react(),
       TanStackRouterVite(),
@@ -58,11 +57,11 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
-      port: 4043,
+      port: 8081,
       host: true,
       proxy: {
         "/api": {
-          target: env.VITE_BASE_URL_API || "http://localhost:5053",
+          target: env.VITE_BASE_URL_API || "http://localhost:8080",
           changeOrigin: true,
           secure: false,
         },

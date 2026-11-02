@@ -9,6 +9,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
+    // Disajikan di root pada port frontend sendiri (lihat scripts/nginx.conf).
+    base: "/",
     plugins: [
       react(),
       TanStackRouterVite(),
@@ -44,11 +46,11 @@ export default defineConfig(({ mode }) => {
       })
     ],
     server: {
-      port: 4041,
+      port: 7071,
       host: true,
       proxy: {
         '/api': {
-          target: env.VITE_BASE_URL_API || 'http://localhost:5051',
+          target: env.VITE_BASE_URL_API || 'http://localhost:7070',
           changeOrigin: true,
           secure: false,
         },

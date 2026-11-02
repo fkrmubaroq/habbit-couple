@@ -14,12 +14,12 @@ import type { LucideIcon } from "lucide-react";
 
 /** Base URL of the standalone grocery app (apps/grocery-tracker-web). */
 export const GROCERY_APP_URL = (
-  import.meta.env.VITE_GROCERY_APP_URL || "http://localhost:4042"
+  import.meta.env.VITE_GROCERY_APP_URL || "http://localhost:6061"
 ).replace(/\/$/, "");
 
 /** Base URL of the standalone pomodoro app (apps/pomodoro-tracker-web). */
 export const POMODORO_APP_URL = (
-  import.meta.env.VITE_POMODORO_APP_URL || "http://localhost:4043"
+  import.meta.env.VITE_POMODORO_APP_URL || "http://localhost:8081"
 ).replace(/\/$/, "");
 
 export interface AppNavItem {
@@ -99,7 +99,7 @@ export const APPS_REGISTRY: MiniApp[] = [
     name: "Keuangan Pasutri",
     slug: "couple-finances",
     route: "#",
-    externalUrl: import.meta.env.VITE_FINANCE_APP_URL || "http://localhost:4040",
+    externalUrl: import.meta.env.VITE_FINANCE_APP_URL || "http://localhost:5051",
     icon: Wallet,
     emoji: "💰",
     description: "Pencatatan pengeluaran & tabungan bersama",

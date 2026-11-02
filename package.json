@@ -22,6 +22,8 @@
     "test:finance-theme": "node apps/finance-tracker-web/tests/qa-theme-runner.mjs",
     "test:finance-ui": "node apps/finance-tracker-web/tests/qa-ui-components-runner.mjs",
     "clean": "turbo run clean",
+    "deploy:env": "node scripts/deploy-env.mjs",
+    "deploy:ssh": "node scripts/deploy-env-ssh.mjs",
     "deploy": "bash scripts/deploy.sh"
   },
   "devDependencies": {

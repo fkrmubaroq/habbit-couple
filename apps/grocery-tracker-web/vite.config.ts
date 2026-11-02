@@ -9,9 +9,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
-    // Production is served under the `/grocery/` path on the shared domain
-    // (see scripts/nginx.conf), while dev keeps running at the root of 4042.
-    base: mode === "production" ? "/grocery/" : "/",
+    // Disajikan di root pada port frontend sendiri (lihat scripts/nginx.conf).
+    base: "/",
     plugins: [
       react(),
       TanStackRouterVite(),
@@ -45,11 +44,11 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
-      port: 4042,
+      port: 6061,
       host: true,
       proxy: {
         "/api": {
-          target: env.VITE_BASE_URL_API || "http://localhost:5052",
+          target: env.VITE_BASE_URL_API || "http://localhost:6060",
           changeOrigin: true,
           secure: false,
         },

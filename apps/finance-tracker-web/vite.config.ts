@@ -7,13 +7,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
+    // Disajikan di root pada port frontend sendiri (lihat scripts/nginx.conf).
+    base: "/",
     plugins: [
       react(),
       TanStackRouterVite(),
       tailwindcss(),
     ],
     server: {
-      port: 4040,
+      port: 5051,
       host: true,
       proxy: {
         "/api": {

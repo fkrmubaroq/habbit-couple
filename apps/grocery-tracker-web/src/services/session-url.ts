@@ -1,17 +1,17 @@
 export const HABIT_APP_URL = (
-  import.meta.env.VITE_HABIT_APP_URL || "http://localhost:4041"
+  import.meta.env.VITE_HABIT_APP_URL || "http://localhost:7071"
 ).replace(/\/$/, "");
 
 export const FINANCE_APP_URL = (
-  import.meta.env.VITE_FINANCE_APP_URL || "http://localhost:4040"
+  import.meta.env.VITE_FINANCE_APP_URL || "http://localhost:5051"
 ).replace(/\/$/, "");
 
 export const GROCERY_APP_URL = (
-  import.meta.env.VITE_GROCERY_APP_URL || "http://localhost:4042"
+  import.meta.env.VITE_GROCERY_APP_URL || "http://localhost:6061"
 ).replace(/\/$/, "");
 
 export const POMODORO_APP_URL = (
-  import.meta.env.VITE_POMODORO_APP_URL || "http://localhost:4043"
+  import.meta.env.VITE_POMODORO_APP_URL || "http://localhost:8081"
 ).replace(/\/$/, "");
 
 let isRedirecting = false;
