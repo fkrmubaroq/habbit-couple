@@ -162,4 +162,4 @@ jobs:
             -o PubkeyAuthentication=no \
             -p "${{ secrets.VPS_PORT || '22' }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "export PATH=/home/ubuntu/.local/share/pnpm/bin:\$PATH; cd '/var/www/habbit-couple/habbit-tracker-api' && (pm2 describe 'habbit-tracker-api' > /dev/null 2>&1 && pm2 restart 'habbit-tracker-api' --update-env || pm2 start dist/index.js --name 'habbit-tracker-api') && pm2 save"
+            "bash -lc \"cd /var/www/habbit-couple/habbit-tracker-api && (pm2 describe habbit-tracker-api > /dev/null 2>&1 && pm2 restart habbit-tracker-api --update-env || pm2 start dist/index.js --name habbit-tracker-api) && pm2 save\""
