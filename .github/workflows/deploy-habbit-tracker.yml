@@ -139,6 +139,19 @@ jobs:
             .artifacts/web/ \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/habbit-couple/habbit-tracker-web/"
 
+      - name: Write .env file to VPS
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=yes \
+            -o PubkeyAuthentication=no \
+            -p "${{ secrets.VPS_PORT || '22' }}" \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+            "cat > '/var/www/habbit-couple/habbit-tracker-api/.env'" <<'ENVEOF'
+          ${{ secrets.API_ENV }}
+          ENVEOF
+
       - name: Restart API with PM2
         env:
           SSHPASS: ${{ secrets.VPS_PASSWORD }}
