@@ -53,6 +53,9 @@ jobs:
         if: ${{ !inputs.skip_web }}
         env:
           VITE_BASE_URL_API: ${{ secrets.VITE_BASE_URL_API }}
+          VITE_FINANCE_APP_URL: ${{ secrets.VITE_FINANCE_APP_URL }}
+          VITE_GROCERY_APP_URL: ${{ secrets.VITE_GROCERY_APP_URL }}
+          VITE_POMODORO_APP_URL: ${{ secrets.VITE_POMODORO_APP_URL }}
         run: pnpm turbo run build --filter=@repo/habbit-tracker-web
 
       - name: Package API bundle
