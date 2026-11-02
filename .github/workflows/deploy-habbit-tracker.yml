@@ -97,39 +97,52 @@ jobs:
           name: habbit-web
           path: .artifacts/web
 
-      - name: Setup SSH key
+      - name: Install sshpass & rsync
+        run: sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+      - name: Trust VPS host key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -p "${{ secrets.VPS_PORT || '22' }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          for i in 1 2 3 4 5; do
+            ssh-keyscan -p "${{ secrets.VPS_PORT || '22' }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null && break
+            sleep 2
+          done
 
       - name: Sync API dist to VPS
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/id_deploy -p ${{ secrets.VPS_PORT || '22' }} -o StrictHostKeyChecking=yes" \
+          sshpass -e rsync -az --delete \
+            -e "ssh -o StrictHostKeyChecking=yes -p ${{ secrets.VPS_PORT || '22' }}" \
             .artifacts/api/ \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_API_PATH }}/dist/"
 
       - name: Sync API package.json
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          rsync -az \
-            -e "ssh -i ~/.ssh/id_deploy -p ${{ secrets.VPS_PORT || '22' }} -o StrictHostKeyChecking=yes" \
+          sshpass -e rsync -az \
+            -e "ssh -o StrictHostKeyChecking=yes -p ${{ secrets.VPS_PORT || '22' }}" \
             .artifacts/api/package.json \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_API_PATH }}/package.json"
 
       - name: Sync Web dist to VPS
         if: ${{ !inputs.skip_web }}
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/id_deploy -p ${{ secrets.VPS_PORT || '22' }} -o StrictHostKeyChecking=yes" \
+          sshpass -e rsync -az --delete \
+            -e "ssh -o StrictHostKeyChecking=yes -p ${{ secrets.VPS_PORT || '22' }}" \
             .artifacts/web/ \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_WEB_PATH }}/"
 
       - name: Restart API with PM2
+        env:
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
         run: |
-          ssh -i ~/.ssh/id_deploy \
-            -p "${{ secrets.VPS_PORT || '22' }}" \
+          sshpass -e ssh \
             -o StrictHostKeyChecking=yes \
+            -o PubkeyAuthentication=no \
+            -p "${{ secrets.VPS_PORT || '22' }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "cd '${{ secrets.VPS_API_PATH }}' && pm2 restart '${{ secrets.PM2_APP_NAME }}' --update-env || pm2 start dist/index.js --name '${{ secrets.PM2_APP_NAME }}'"
+            "cd '${{ secrets.VPS_API_PATH }}' && echo '${{ secrets.VPS_PASSWORD }}' | sudo -S -p '' pm2 restart '${{ secrets.PM2_APP_NAME }}' --update-env || echo '${{ secrets.VPS_PASSWORD }}' | sudo -S -p '' pm2 start dist/index.js --name '${{ secrets.PM2_APP_NAME }}'"
