@@ -145,4 +145,4 @@ jobs:
             -o PubkeyAuthentication=no \
             -p "${{ secrets.VPS_PORT || '22' }}" \
             "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            "cd '/var/www/habbit-couple/habbit-tracker-api' && echo '${{ secrets.VPS_PASSWORD }}' | sudo -S -p '' pm2 restart '${{ secrets.PM2_APP_NAME }}' --update-env || echo '${{ secrets.VPS_PASSWORD }}' | sudo -S -p '' pm2 start dist/index.js --name '${{ secrets.PM2_APP_NAME }}'"
+            "cd '/var/www/habbit-couple/habbit-tracker-api' && echo '${{ secrets.VPS_PASSWORD }}' | sudo -S -p '' pm2 restart 'habbit-tracker-api' --update-env || echo '${{ secrets.VPS_PASSWORD }}' | sudo -S -p '' pm2 start dist/index.js --name 'habbit-tracker-api'"
