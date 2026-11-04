@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-bundle/
 .env
 .env.deploy
 .env.local

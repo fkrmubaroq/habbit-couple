@@ -16,6 +16,9 @@
     "db:seed:pomodoro": "turbo run db:seed --filter=@repo/pomodoro-tracker-api",
     "db:migrate:all": "turbo run db:migrate",
     "db:seed:all": "turbo run db:seed",
+    "db:migrate:prod": "node scripts/deploy-db-migrate.mjs --task migrate",
+    "db:seed:prod": "node scripts/deploy-db-migrate.mjs --task seed",
+    "db:setup:prod": "node scripts/deploy-db-migrate.mjs --task migrate,seed",
     "migrate:all": "turbo run db:migrate",
     "test:finance-api": "node apps/finance-tracker-api/tests/qa-api-runner.mjs",
     "test:finance-auth": "node apps/finance-tracker-api/tests/qa-auth-logout-runner.mjs",
@@ -23,10 +26,16 @@
     "test:finance-ui": "node apps/finance-tracker-web/tests/qa-ui-components-runner.mjs",
     "clean": "turbo run clean",
     "deploy:env": "node scripts/deploy-env.mjs",
+    "deploy:env:vps": "node scripts/deploy-env-ssh.mjs",
     "deploy:ssh": "node scripts/deploy-env-ssh.mjs",
-    "deploy": "bash scripts/deploy.sh"
+    "deploy:nginx": "node scripts/deploy-nginx.mjs",
+    "deploy": "node scripts/deploy-app.mjs",
+    "deploy:app": "node scripts/deploy-app.mjs",
+    "deploy:refresh": "node scripts/deploy-app.mjs --refresh",
+    "deploy:full": "pnpm run deploy && pnpm run deploy:env:vps && pnpm run deploy:refresh"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "turbo": "^2.4.4"
   },
   "packageManager": "pnpm@12.9.1"

@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+// Upload .env.deploy -> .env di VPS via scp (OpenSSH).
+// Path mengikuti layout baru deploy-app.mjs: <remoteBase>/<app>/.env
+// Restart pm2 dilakukan tahap refresh (pnpm deploy:refresh), bukan di sini.
+
 import { access, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -7,6 +11,13 @@ import { spawnSync } from "node:child_process";
 import { createInterface } from "node:readline";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+const DEFAULTS = {
+  user: "ubuntu",
+  host: "43.134.25.137",
+  port: "22",
+  path: "/var/www/habbit-couple",
+};
 
 const APPS = [
   "habbit-tracker-api",
@@ -19,16 +30,15 @@ const APPS = [
   "pomodoro-tracker-web",
 ];
 
-// Instance pm2 hanya untuk API (web statis disajikan nginx).
 const PM2_INSTANCES = {
-  "habbit-tracker-api": "habbit-backend",
-  "finance-tracker-api": "finance-backend",
-  "grocery-tracker-api": "grocery-backend",
-  "pomodoro-tracker-api": "pomodoro-backend",
+  "habbit-tracker-api": "habbit-tracker-api",
+  "finance-tracker-api": "finance-tracker-api",
+  "grocery-tracker-api": "grocery-tracker-api",
+  "pomodoro-tracker-api": "pomodoro-tracker-api",
 };
 
 function parseArgs(argv) {
-  const opts = { host: null, user: null, port: "22", path: null, restart: false };
+  const opts = { host: null, user: null, port: null, path: null, restart: false, yes: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--user" || a === "-u") opts.user = argv[++i];
@@ -36,6 +46,7 @@ function parseArgs(argv) {
     else if (a === "--port" || a === "-p") opts.port = argv[++i];
     else if (a === "--path" || a === "--remote-path") opts.path = argv[++i];
     else if (a === "--restart") opts.restart = true;
+    else if (a === "--yes" || a === "-y") opts.yes = true;
     else if (!opts.target && a.includes("@")) opts.target = a;
   }
   return opts;
@@ -75,28 +86,27 @@ async function main() {
   if (!target && opts.user && opts.host) target = `${opts.user}@${opts.host}`;
   if (!target) {
     console.log("=== Deploy .env.deploy -> .env via SSH (OpenSSH) ===\n");
-    const user = await ask("Username SSH: ");
-    const host = await ask("IP / host: ");
-    const port = (await ask("Port [22]: ")) || "22";
-    opts.port = port;
+    const user = (await ask(`Username SSH [${DEFAULTS.user}]: `)) || DEFAULTS.user;
+    const host = (await ask(`IP / host [${DEFAULTS.host}]: `)) || DEFAULTS.host;
+    opts.port = (await ask(`Port [${DEFAULTS.port}]: `)) || DEFAULTS.port;
     target = `${user}@${host}`;
   }
+  opts.port = opts.port || DEFAULTS.port;
 
   let remoteBase = opts.path;
   if (!remoteBase) {
-    remoteBase = await ask(
-      "Path repo di server (mis. /var/www/habbit-tracker-couple): ",
-    );
+    remoteBase =
+      (await ask(`Path deploy di server [${DEFAULTS.path}]: `)) || DEFAULTS.path;
   }
 
   let restart = opts.restart;
-  if (restart === false && !process.argv.includes("--restart")) {
+  if (!opts.yes && !opts.restart) {
     const a = await ask("Restart pm2 setelah upload? [y/N]: ");
     restart = ["y", "yes"].includes(a.toLowerCase());
   }
 
   if (!target || !remoteBase) {
-    console.error("ERROR: target dan path repo wajib diisi.");
+    console.error("ERROR: target dan path deploy wajib diisi.");
     process.exit(1);
   }
 
@@ -123,12 +133,12 @@ async function main() {
   }
 
   console.log(`\nTarget: ${target} (port ${opts.port})`);
-  console.log(`Remote: ${remoteBase}/apps/<app>/.env\n`);
+  console.log(`Remote: ${remoteBase}/<app>/.env\n`);
 
   let ok = 0;
   for (const app of available) {
     const src = join(root, "apps", app, ".env.deploy");
-    const dest = `${target}:${remoteBase}/apps/${app}/.env`;
+    const dest = `${target}:${remoteBase}/${app}/.env`;
     process.stdout.write(`-> ${app} ... `);
     const r = run("scp", [...scpOpts, src, dest]);
     if (r.status === 0) {
@@ -150,13 +160,13 @@ async function main() {
 
     for (const app of apiApps) {
       const name = PM2_INSTANCES[app];
-      const cwd = `${remoteBase}/apps/${app}`;
+      const cwd = `${remoteBase}/${app}/dist`;
       const cwdQ = cwd.replace(/'/g, "'\\''");
       lines.push(`echo "-> ${name}"`);
       lines.push(
         `if pm2 describe '${name}' > /dev/null 2>&1; then ` +
           `pm2 restart '${name}' --update-env; ` +
-          `else (cd '${cwdQ}/dist' && pm2 start index.js --name '${name}') || exit 1; fi`,
+          `else (cd '${cwdQ}' && pm2 start index.mjs --name '${name}') || exit 1; fi`,
       );
     }
 
@@ -171,6 +181,8 @@ async function main() {
         run("ssh", [...sshOpts, target, "pm2 save"]);
       }
     }
+  } else {
+    console.log("pm2 tidak di-restart (jalankan pnpm deploy:refresh).");
   }
 
   console.log("\nSelesai.");
